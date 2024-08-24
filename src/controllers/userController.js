@@ -83,88 +83,88 @@ const verifyCode = async (req, res) => {
 };
 
 
-const userInfo = async (req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
-    
-     const timeNow = new Date().toISOString();
+        const userInfo = async (req, res) => {
+            const authtoken = req.headers['authorization']?.split(' ')[1];    
+            const auth =md5(authtoken);
+            
+            const timeNow = new Date().toISOString();
 
-    if (!auth) {
-        return res.status(200).json({
-            message: 'Failed',
-            status: false,
-            timeStamp: timeNow,
-        });
-    }
+            if (!auth) {
+                return res.status(200).json({
+                    message: 'Failed',
+                    status: false,
+                    timeStamp: timeNow,
+                });
+            }
 
-    try {
-        const [rows] = await connection.query('SELECT * FROM users WHERE `token` = ?', [auth]);
+            try {
+                const [rows] = await connection.query('SELECT * FROM users WHERE `token` = ?', [auth]);
 
-        if (!rows || rows.length === 0) {
-            return res.status(200).json({
-                message: 'Failed',
-                status: false,
-                timeStamp: timeNow,
-            });
-        }
+                if (!rows || rows.length === 0) {
+                    return res.status(200).json({
+                        message: 'Failed',
+                        status: false,
+                        timeStamp: timeNow,
+                    });
+                }
 
-        const user = rows[0];
-        const [recharge] = await connection.query('SELECT * FROM recharge WHERE `phone` = ? AND status = 1', [user.phone]);
-        let totalRecharge = 0;
-        recharge.forEach((data) => {
-            totalRecharge += data.money;
-        });
+                const user = rows[0];
+                const [recharge] = await connection.query('SELECT * FROM recharge WHERE `phone` = ? AND status = 1', [user.phone]);
+                let totalRecharge = 0;
+                recharge.forEach((data) => {
+                    totalRecharge += data.money;
+                });
 
-        const [withdraw] = await connection.query('SELECT * FROM withdraw WHERE `phone` = ? AND status = 1', [user.phone]);
-        let totalWithdraw = 0;
-        withdraw.forEach((data) => {
-            totalWithdraw += data.money;
-        });
+                const [withdraw] = await connection.query('SELECT * FROM withdraw WHERE `phone` = ? AND status = 1', [user.phone]);
+                let totalWithdraw = 0;
+                withdraw.forEach((data) => {
+                    totalWithdraw += data.money;
+                });
 
-        const [userBank] = await connection.query('SELECT usdtBep20, usdttrc20 FROM user_bank WHERE `phone` = ?', [user.phone]);
+                const [userBank] = await connection.query('SELECT usdtBep20, usdttrc20 FROM user_bank WHERE `phone` = ?', [user.phone]);
 
-        let usdtBep = 0;
-        let usdtTrc = 0;
+                let usdtBep = 0;
+                let usdtTrc = 0;
 
-        if (userBank && userBank.length > 0) {
-            usdtBep = userBank[0].usdtBep20 || 0;
-            usdtTrc = userBank[0].usdttrc20 || 0;
-        }
+                if (userBank && userBank.length > 0) {
+                    usdtBep = userBank[0].usdtBep20 || 0;
+                    usdtTrc = userBank[0].usdttrc20 || 0;
+                }
 
 
-        const { id, password, ip, veri, ip_address, status, time, token, ...others } = user;
-        return res.status(200).json({
-            message: 'Success',
-            status: true,
-            data: {
-                code: others.code,
-                id_user: others.id_user,
-                last_login: user.last_login.toLocaleString(),
-                name_user: others.name_user,
-                phone_user: others.phone,
-                money_user: user.money,
-                thirdparty_wallet: user.thirdparty_wallet,
-                ai_balance: user.ai_balance,
-                total_money:user.total_money,
-                winning_wallet: others.win_wallet,
-                able_to_bet:others.able_to_bet,
-                vip_level: others.vip_level,
-                usdtBep: usdtBep,
-                usdtTrc: usdtTrc,
-            },
-            totalRecharge: totalRecharge,
-            totalWithdraw: totalWithdraw,
-            timeStamp: timeNow,
-        });
-    } catch (error) {
-        console.error('Error fetching user info:', error.message, error.stack);
-        return res.status(500).json({
-            message: `Internal Server Error: ${error.message}`,
-            status: false,
-            timeStamp: timeNow,
-        });
-    }
-};
+                const { id, password, ip, veri, ip_address, status, time, token, ...others } = user;
+                return res.status(200).json({
+                    message: 'Success',
+                    status: true,
+                    data: {
+                        code: others.code,
+                        id_user: others.id_user,
+                        last_login: user.last_login.toLocaleString(),
+                        name_user: others.name_user,
+                        phone_user: others.phone,
+                        money_user: user.money,
+                        thirdparty_wallet: user.thirdparty_wallet,
+                        ai_balance: user.ai_balance,
+                        total_money:user.total_money,
+                        winning_wallet: others.win_wallet,
+                        able_to_bet:others.able_to_bet,
+                        vip_level: others.vip_level,
+                        usdtBep: usdtBep,
+                        usdtTrc: usdtTrc,
+                    },
+                    totalRecharge: totalRecharge,
+                    totalWithdraw: totalWithdraw,
+                    timeStamp: timeNow,
+                });
+            } catch (error) {
+                console.error('Error fetching user info:', error.message, error.stack);
+                return res.status(500).json({
+                    message: `Internal Server Error: ${error.message}`,
+                    status: false,
+                    timeStamp: timeNow,
+                });
+            }
+        };
 
 
 const changeUser = async(req, res) => {
@@ -204,7 +204,7 @@ const changePassword = async(req, res) => {
     const authtoken = req.headers['authorization']?.split(' ')[1];    
     const auth =md5(authtoken);
     let password = req.body.password;
-    let newPassWord = req.body.newPassWord;
+    let newPassWord = req.body.newPassWord;         
     // let otp = req.body.otp;
 
     if(!password || !newPassWord) return res.status(200).json({

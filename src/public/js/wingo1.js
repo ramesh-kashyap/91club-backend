@@ -88,7 +88,7 @@ socket.on("data-server", function (msg) {
     let data2 = []; // lấy ra cầu cũ
     let data3 = data2.push(msg.data[1]);
     $(".time-box .info .number").text(data1.period);
-    showListOrder3(data2, 0);
+    showListOrder3(data2, 0); 
     pageno = 0;
     limit = 10;
     page = 1;
