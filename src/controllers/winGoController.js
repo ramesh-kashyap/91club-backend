@@ -233,7 +233,8 @@ const betWinGo = async (req, res) => {
     let { typeid, join, x, money } = req.body;
 
    
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
 
     if (typeid != 1 && typeid != 3 && typeid != 5 && typeid != 10) {
         return res.status(200).json({
@@ -481,7 +482,8 @@ const listOrderOld = async (req, res) => {
             status: false
         });
     }
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     const [user] = await connection.query('SELECT `phone`, `code`, `invite`, `level`, `money` FROM users WHERE token = ? AND veri = 1  LIMIT 1 ', [auth]);
 
     let game = '';
@@ -547,7 +549,8 @@ const GetMyEmerdList = async (req, res) => {
             status: false
         });
     }
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
 
     let game = '';
     if (typeid == 1) game = 'wingo';
@@ -595,7 +598,8 @@ const GetMyEmerdList = async (req, res) => {
 }
 
 const WingoBetList = async (req, res) => {
-    const auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     const timeNow = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
     if (!auth) {
@@ -779,7 +783,8 @@ const addWinGo = async (game) => {
 
 const checkPeriodAndStage = async (req, res) => {
     try {
-        let auth = req.cookies.auth;
+        const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
 
         if (!auth) {
             return res.status(200).json({
@@ -852,7 +857,8 @@ const checkPeriodAndStage = async (req, res) => {
 
 const checkPeriodAndStage3 = async (req, res) => {
     try {
-        let auth = req.cookies.auth;
+        const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
 
         if (!auth) {
             return res.status(200).json({
@@ -927,7 +933,8 @@ const checkPeriodAndStage3 = async (req, res) => {
 
 const checkPeriodAndStage5 = async (req, res) => {
     try {
-        let auth = req.cookies.auth;
+        const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
 
         if (!auth) {
             return res.status(200).json({
@@ -1002,7 +1009,8 @@ const checkPeriodAndStage5 = async (req, res) => {
 
 const checkPeriodAndStage10 = async (req, res) => {
     try {
-        let auth = req.cookies.auth;
+        const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
 
         if (!auth) {
             return res.status(200).json({
