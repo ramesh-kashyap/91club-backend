@@ -244,7 +244,7 @@ const betWinGo = async (req, res) => {
     }
 
     let gameJoin = '';
-    if (typeid == 1) gameJoin = 'wingo';
+    if (typeid == 1) gameJoin = 'wingo';    
     if (typeid == 3) gameJoin = 'wingo3';
     if (typeid == 5) gameJoin = 'wingo5';
     if (typeid == 10) gameJoin = 'wingo10';
@@ -274,63 +274,63 @@ const betWinGo = async (req, res) => {
 
     let formatTime = timerJoin();
 
-    let color = '';
-    if (join == 'l') {
-        color = 'big';
-    } else if (join == 'n') {
-        color = 'small';
-    } else if (join == 't') {
-        color = 'violet';
-    } else if (join == 'd') {
-        color = 'red';
-    } else if (join == 'x') {
-        color = 'green';
-    } else if (join == '0') {
-        color = 'red-violet';
-    } else if (join == '5') {
-        color = 'green-violet';
-    } else if (join % 2 == 0) {
-        color = 'red';
-    } else if (join % 2 != 0) {
-        color = 'green';
-    }
+    // let color = '';
+    // if (join == 'l') {
+    //     color = 'big';
+    // } else if (join == 'n') {
+    //     color = 'small';
+    // } else if (join == 't') {
+    //     color = 'violet';
+    // } else if (join == 'd') {
+    //     color = 'red';
+    // } else if (join == 'x') {
+    //     color = 'green';
+    // } else if (join == '0') {
+    //     color = 'red-violet';
+    // } else if (join == '5') {
+    //     color = 'green-violet';
+    // } else if (join % 2 == 0) {
+    //     color = 'red';
+    // } else if (join % 2 != 0) {
+    //     color = 'green';
+    // }
 
-    let checkJoin = '';
+    // let checkJoin = '';
 
-    if (!isNumber(join) && join == 'l' || join == 'n') {
-        checkJoin = `
-        <div data-v-a9660e98="" class="van-image" style="width: 30px; height: 30px;">
-            <img src="/images/${(join == 'n') ? 'small' : 'big'}.png" class="van-image__img">
-        </div>
-        `
-    } else {
-        checkJoin =
-            `
-        <span data-v-a9660e98="">${(isNumber(join)) ? join : ''}</span>
-        `
-    }
+    // if (!isNumber(join) && join == 'l' || join == 'n') {
+    //     checkJoin = `
+    //     <div data-v-a9660e98="" class="van-image" style="width: 30px; height: 30px;">
+    //         <img src="/images/${(join == 'n') ? 'small' : 'big'}.png" class="van-image__img">
+    //     </div>
+    //     `
+    // } else {
+    //     checkJoin =
+    //         `
+    //     <span data-v-a9660e98="">${(isNumber(join)) ? join : ''}</span>
+    //     `
+    // }
 
 
-    let result = `
-    <div data-v-a9660e98="" issuenumber="${period}" addtime="${formatTime}" rowid="1" class="hb">
-        <div data-v-a9660e98="" class="item c-row">
-            <div data-v-a9660e98="" class="result">
-                <div data-v-a9660e98="" class="select select-${(color)}">
-                    ${checkJoin}
-                </div>
-            </div>
-            <div data-v-a9660e98="" class="c-row c-row-between info">
-                <div data-v-a9660e98="">
-                    <div data-v-a9660e98="" class="issueName">
-                        ${period}
-                    </div>
-                    <div data-v-a9660e98="" class="tiem">${formatTime}</div>
-                </div>
-            </div>
-        </div>
-        <!---->
-    </div>
-    `;
+    // let result = `
+    // <div data-v-a9660e98="" issuenumber="${period}" addtime="${formatTime}" rowid="1" class="hb">
+    //     <div data-v-a9660e98="" class="item c-row">
+    //         <div data-v-a9660e98="" class="result">
+    //             <div data-v-a9660e98="" class="select select-${(color)}">
+    //                 ${checkJoin}
+    //             </div>
+    //         </div>
+    //         <div data-v-a9660e98="" class="c-row c-row-between info">
+    //             <div data-v-a9660e98="">
+    //                 <div data-v-a9660e98="" class="issueName">
+    //                     ${period}
+    //                 </div>
+    //                 <div data-v-a9660e98="" class="tiem">${formatTime}</div>
+    //             </div>
+    //         </div>
+    //     </div>
+    //     <!---->
+    // </div>
+    // `;
 
     function timerJoin(params = '') {
         let date = '';
@@ -388,7 +388,6 @@ const betWinGo = async (req, res) => {
         return res.status(200).json({
             message: 'Bet successfully',
             status: true,
-            data: result,
             change: users[0].level,
             money: users[0].money,
         });
