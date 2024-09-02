@@ -23,7 +23,8 @@ const randomNumber = (min, max) => {
 }
 const verifyCode = async (req, res) => {
     try {
-        let auth = req.cookies.auth;
+        const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
         let now = new Date().getTime();
         let timeEnd = now + 1000 * (60 * 2) + 500;
         let otp = Math.floor(100000 + Math.random() * 900000);
@@ -82,90 +83,93 @@ const verifyCode = async (req, res) => {
 };
 
 
-const userInfo = async (req, res) => {
-    let auth = req.cookies.auth;
-    const timeNow = new Date().toISOString();
+        const userInfo = async (req, res) => {
+            const authtoken = req.headers['authorization']?.split(' ')[1];    
+            const auth =md5(authtoken);
+            
+            const timeNow = new Date().toISOString();
 
-    if (!auth) {
-        return res.status(200).json({
-            message: 'Failed',
-            status: false,
-            timeStamp: timeNow,
-        });
-    }
+            if (!auth) {
+                return res.status(200).json({
+                    message: 'Failed',
+                    status: false,
+                    timeStamp: timeNow,
+                });
+            }
 
-    try {
-        const [rows] = await connection.query('SELECT * FROM users WHERE `token` = ?', [auth]);
+            try {
+                const [rows] = await connection.query('SELECT * FROM users WHERE `token` = ?', [auth]);
 
-        if (!rows || rows.length === 0) {
-            return res.status(200).json({
-                message: 'Failed',
-                status: false,
-                timeStamp: timeNow,
-            });
-        }
+                if (!rows || rows.length === 0) {
+                    return res.status(200).json({
+                        message: 'Failed',
+                        status: false,
+                        timeStamp: timeNow,
+                    });
+                }
 
-        const user = rows[0];
-        const [recharge] = await connection.query('SELECT * FROM recharge WHERE `phone` = ? AND status = 1', [user.phone]);
-        let totalRecharge = 0;
-        recharge.forEach((data) => {
-            totalRecharge += data.money;
-        });
+                const user = rows[0];
+                const [recharge] = await connection.query('SELECT * FROM recharge WHERE `phone` = ? AND status = 1', [user.phone]);
+                let totalRecharge = 0;
+                recharge.forEach((data) => {
+                    totalRecharge += data.money;
+                });
 
-        const [withdraw] = await connection.query('SELECT * FROM withdraw WHERE `phone` = ? AND status = 1', [user.phone]);
-        let totalWithdraw = 0;
-        withdraw.forEach((data) => {
-            totalWithdraw += data.money;
-        });
+                const [withdraw] = await connection.query('SELECT * FROM withdraw WHERE `phone` = ? AND status = 1', [user.phone]);
+                let totalWithdraw = 0;
+                withdraw.forEach((data) => {
+                    totalWithdraw += data.money;
+                });
 
-        const [userBank] = await connection.query('SELECT usdtBep20, usdttrc20 FROM user_bank WHERE `phone` = ?', [user.phone]);
+                const [userBank] = await connection.query('SELECT usdtBep20, usdttrc20 FROM user_bank WHERE `phone` = ?', [user.phone]);
 
-        let usdtBep = 0;
-        let usdtTrc = 0;
+                let usdtBep = 0;
+                let usdtTrc = 0;
 
-        if (userBank && userBank.length > 0) {
-            usdtBep = userBank[0].usdtBep20 || 0;
-            usdtTrc = userBank[0].usdttrc20 || 0;
-        }
+                if (userBank && userBank.length > 0) {
+                    usdtBep = userBank[0].usdtBep20 || 0;
+                    usdtTrc = userBank[0].usdttrc20 || 0;
+                }
 
 
-        const { id, password, ip, veri, ip_address, status, time, token, ...others } = user;
-        return res.status(200).json({
-            message: 'Success',
-            status: true,
-            data: {
-                code: others.code,
-                id_user: others.id_user,
-                last_login: user.last_login.toLocaleString(),
-                name_user: others.name_user,
-                phone_user: others.phone,
-                money_user: user.money,
-                thirdparty_wallet: user.thirdparty_wallet,
-                ai_balance: user.ai_balance,
-                total_money:user.total_money,
-                winning_wallet: others.win_wallet,
-                able_to_bet:others.able_to_bet,
-                vip_level: others.vip_level,
-                usdtBep: usdtBep,
-                usdtTrc: usdtTrc,
-            },
-            totalRecharge: totalRecharge,
-            totalWithdraw: totalWithdraw,
-            timeStamp: timeNow,
-        });
-    } catch (error) {
-        console.error('Error fetching user info:', error.message, error.stack);
-        return res.status(500).json({
-            message: `Internal Server Error: ${error.message}`,
-            status: false,
-            timeStamp: timeNow,
-        });
-    }
-};
+                const { id, password, ip, veri, ip_address, status, time, token, ...others } = user;
+                return res.status(200).json({
+                    message: 'Success',
+                    status: true,
+                    data: {
+                        code: others.code,
+                        id_user: others.id_user,
+                        last_login: user.last_login.toLocaleString(),
+                        name_user: others.name_user,
+                        phone_user: others.phone,
+                        money_user: user.money,
+                        thirdparty_wallet: user.thirdparty_wallet,
+                        ai_balance: user.ai_balance,
+                        total_money:user.total_money,
+                        winning_wallet: others.win_wallet,
+                        able_to_bet:others.able_to_bet,
+                        vip_level: others.vip_level,
+                        usdtBep: usdtBep,
+                        usdtTrc: usdtTrc,
+                    },
+                    totalRecharge: totalRecharge,
+                    totalWithdraw: totalWithdraw,
+                    timeStamp: timeNow,
+                });
+            } catch (error) {
+                console.error('Error fetching user info:', error.message, error.stack);
+                return res.status(500).json({
+                    message: `Internal Server Error: ${error.message}`,
+                    status: false,
+                    timeStamp: timeNow,
+                });
+            }
+        };
 
 
 const changeUser = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let name = req.body.name;
     let type = req.body.type;
 
@@ -197,9 +201,10 @@ const changeUser = async(req, res) => {
 }
 
 const changePassword = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let password = req.body.password;
-    let newPassWord = req.body.newPassWord;
+    let newPassWord = req.body.newPassWord;         
     // let otp = req.body.otp;
 
     if(!password || !newPassWord) return res.status(200).json({
@@ -243,7 +248,8 @@ const changePassword = async(req, res) => {
 }
 
 const checkInHandling = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let data = req.body.data;
 
     if(!auth) return res.status(200).json({
@@ -486,7 +492,8 @@ function timerJoin(params = '') {
   }
 
   const promotion = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     if(!auth) {
         return res.status(200).json({
             message: 'Failed',
@@ -620,7 +627,8 @@ function timerJoin(params = '') {
 
 
 const myTeam = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     if(!auth) {
         return res.status(200).json({
             message: 'Failed',
@@ -648,7 +656,8 @@ const myTeam = async(req, res) => {
 }
 
 const listMyTeam = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     if(!auth) {
         return res.status(200).json({
             message: 'Failed',
@@ -693,7 +702,8 @@ const listMyTeam = async(req, res) => {
 
 
 const listMyRebate = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     if(!auth) {
         return res.status(200).json({
             message: 'Failed',
@@ -744,7 +754,8 @@ const listMyRebate = async(req, res) => {
 }
 
 const listFundTransferReport = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     if (!auth) {
         return res.status(200).json({
             message: 'Failed',
@@ -779,7 +790,8 @@ const listFundTransferReport = async (req, res) => {
 };
 
 const listGameTransferReport = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     if (!auth) {
         return res.status(200).json({
             message: 'Failed',
@@ -814,7 +826,8 @@ const listGameTransferReport = async (req, res) => {
 };
 
 const claimInterest = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     if(!auth) {
         return res.status(200).json({
             message: 'Failed',
@@ -861,7 +874,8 @@ const claimInterest = async(req, res) => {
 
 const listMyInvation = async(req, res) => {
     try {
-        let auth = req.cookies.auth;
+        const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
         let timeNow = new Date().getTime();
 
         if(!auth) {
@@ -927,7 +941,8 @@ const listMyInvation = async(req, res) => {
 
 const createPayment = async (req, res) => {
 
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let money = req.body.money;
     let type = req.body.type;
     let typeid = req.body.typeid;
@@ -966,7 +981,8 @@ const createPayment = async (req, res) => {
   };
 
   const createPayment101 = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let money = req.body.money;
     let typeid = req.body.typeid;
 
@@ -1063,7 +1079,8 @@ const paymentPage = async(req, res) => {
 
 
 const manualPayment = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let money = req.body.money;
     let txt_utr = req.body.txt_utr;
     let type = req.body.type;
@@ -1152,7 +1169,8 @@ const manualPayment = async (req, res) => {
 
 
 const createPayment10 = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let money = req.body.money;
     let type = req.body.type;
     let typeid = req.body.typeid;
@@ -1513,7 +1531,8 @@ const PaytmCallback = async (req, res) => {
 
 
 const rechargeCancel = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let id = req.body.id;
     let currency = req.body.currency;
     let type = req.body.type;
@@ -1722,7 +1741,8 @@ const userBonus = async (money, phone) => {
 
 
   const rechargeCoin1 = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let money = req.body.money;
     let type = req.body.type;
     let typeid = req.body.typeid;
@@ -1829,7 +1849,8 @@ const userBonus = async (money, phone) => {
 
 const rechargeCoin = async (req, res) => {
     try {
-        let auth = req.cookies.auth;
+        const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
         let money = req.body.money;
         let type = req.body.type;
         let typeid = req.body.typeid;
@@ -1933,7 +1954,8 @@ const rechargeCoin = async (req, res) => {
 
 
 const recharge = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let money = req.body.money;
     let type = req.body.type;
     let typeid = req.body.typeid;
@@ -2125,7 +2147,8 @@ const recharge = async(req, res) => {
 
 
 const manualRecharge = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let money = req.body.money;
     let type = req.body.type;
     let typeid = req.body.typeid;
@@ -2226,7 +2249,8 @@ const manualRecharge = async(req, res) => {
 }
 
 const addBank = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let bankName = req.body.bankName;
     let accountName = req.body.accountName;
     let accountNumber = req.body.accountNumber;
@@ -2350,7 +2374,8 @@ const addBank = async (req, res) => {
 
 
 const infoUserBank = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     if(!auth) {
         return res.status(200).json({
             message: 'Failed',
@@ -2420,7 +2445,8 @@ const infoUserBank = async(req, res) => {
 }
 
 const withdrawal3 = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let money = req.body.money;
     let password = req.body.password;
     if(!auth || !money || !password || money < 200) {
@@ -2535,7 +2561,8 @@ const withdrawal3 = async(req, res) => {
 }
 
 const fundTransfer = async (req, res) => {
-    const auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     const amount = parseFloat(req.body.amount); // Ensure amount is a number
     const password = req.body.password;
     const timeNow = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -2605,7 +2632,8 @@ const fundTransfer = async (req, res) => {
 
 
 const fundTransferGame = async (req, res) => {
-    const auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
 
 
     const [user] = await connection.query('SELECT `id`, `phone`, `code`,`invite`, `win_wallet`,`money` FROM users WHERE `token` = ? ', [auth]);
@@ -2671,7 +2699,8 @@ const fundTransferGame = async (req, res) => {
 
 
 const withdrawal4 = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let money = parseFloat(req.body.money);
     let paymentMode = req.body.paymentMode;
     let password = req.body.password;
@@ -2815,7 +2844,8 @@ const withdrawal4 = async (req, res) => {
 
 
 const recharge2 = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let money = req.body.money;
     if(!auth) {
         return res.status(200).json({
@@ -2856,7 +2886,8 @@ const recharge2 = async(req, res) => {
 
 
 const checkRechargeStatus = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let orderId = req.body.orderId;
     if(!auth) {
         return res.status(200).json({
@@ -2893,7 +2924,8 @@ const checkRechargeStatus = async(req, res) => {
 }
 
 const listRecharge = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     const timeNow = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
     if (!auth) {
@@ -2934,7 +2966,8 @@ const listRecharge = async (req, res) => {
 
 
 const search = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let phone = req.body.phone;
     if(!auth) {
         return res.status(200).json({
@@ -2995,7 +3028,8 @@ const search = async(req, res) => {
 }
 
 const searchRecharge = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     if (!auth) {
         return res.status(200).json({
             message: 'Failed',
@@ -3076,7 +3110,8 @@ const searchRecharge = async (req, res) => {
 
 
 const listWithdraw = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     const timeNow = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
     if (!auth) {
@@ -3117,7 +3152,8 @@ const listWithdraw = async (req, res) => {
 
 
 const useRedenvelope = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let code = req.body.code;
     if(!auth || !code) {
         return res.status(200).json({
@@ -3205,7 +3241,8 @@ const callback_bank = async(req, res) => {
 }
 
 const getAIBonus = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
 
     if (!auth) {
         return res.status(200).json({
@@ -3245,7 +3282,8 @@ const getAIBonus = async (req, res) => {
 
 
 const getAIBalance = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
 
     if (!auth) {
         return res.status(200).json({
@@ -3305,7 +3343,8 @@ const getAIBalance = async (req, res) => {
 };
 
 const rebate = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     const timeNow = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
     try {
@@ -3392,7 +3431,8 @@ const rebate = async (req, res) => {
 
 
 const attendanceBonus = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     const [user] = await connection.query('SELECT `id`, `phone`, `code`, `invite` FROM users WHERE `token` = ?', [auth]);
     let userInfo = user[0];
     if (!userInfo) {
@@ -3494,7 +3534,8 @@ const checkAttendanceBonusRules = async (phone, attendance, sumOfRecharge, res) 
 };
 
 const getAttendanceInfo = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     const [user] = await connection.query('SELECT `id`, `phone`, `code`, `invite`, `attendance` FROM users WHERE `token` = ?', [auth]);
     let userInfo = user[0];
     if (!userInfo) {
@@ -3518,7 +3559,8 @@ const getAttendanceInfo = async (req, res) => {
 };
 
 const rebateBonus = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     const timeNow = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
     try {
@@ -3734,7 +3776,8 @@ const calculateDailyEarnings = async () => {
 };
 
 const listIncomeReport = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     const timeNow = new Date().toISOString();
 
     if (!auth) {
@@ -3791,7 +3834,8 @@ const listIncomeReport = async (req, res) => {
 };
 
 const listTeamReport = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     const timeNow = new Date().toISOString();
 
     if (!auth) {
@@ -3890,7 +3934,8 @@ const listTeamReport = async (req, res) => {
 
 
 const listTotalTeam = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     const timeNow = new Date().toISOString();
 
     if (!auth) {
@@ -3969,7 +4014,8 @@ const listTotalTeam = async (req, res) => {
 
 
 const listAiLevelReport = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     const timeNow = new Date().toISOString();
 
     if (!auth) {
@@ -4025,7 +4071,8 @@ const listAiLevelReport = async (req, res) => {
 
 
 const insertStreakBonus = async (req, res) => {
-    const auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     const { userId, number, periods } = req.body;
     const timeNow = new Date().toISOString();
 
@@ -4108,7 +4155,8 @@ const insertStreakBonus = async (req, res) => {
 
 
 const listStreakBonusReport = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     if (!auth) {
         return res.status(200).json({
             message: 'Failed',
@@ -4142,7 +4190,8 @@ const listStreakBonusReport = async (req, res) => {
 };
 
 const getVipDetails = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     if (!auth) {
         return res.status(200).json({
             message: 'Failed',
@@ -4190,7 +4239,8 @@ const getVipDetails = async (req, res) => {
 
 
 const claimLevelUpBonus = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let id = req.body.id;
 
     if (!auth || !id) {
@@ -4259,7 +4309,8 @@ const claimLevelUpBonus = async (req, res) => {
 };
 
 const vipHistory = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     if (!auth) {
         return res.status(200).json({
             message: 'Failed',
@@ -4331,7 +4382,8 @@ const monthlyVipBonus = async () => {
 };
 
 const teamSubordinatesDetails = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     const timeNow = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
     if (!auth) {
@@ -4467,7 +4519,8 @@ const teamSubordinatesDetails = async (req, res) => {
 };
 
 const directTeamDetails = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     const timeNow = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
     if (!auth) {
@@ -4584,6 +4637,123 @@ const calculateTotal = async (phone, bet) => {
         return '0.00'; // Return '0.00' in case of an error
     }
 };
+
+const wingo1 = async (req, res) => {
+    try {
+        const [winGo1] = await connection.execute(
+            'SELECT * FROM `wingo` WHERE `game` = "wingo" ORDER BY `id` DESC LIMIT 2',
+            []
+        );
+        const data = winGo1;
+
+        return res.status(200).json({
+            code: 0,
+            msg: "Get success",
+            data: {
+                data,
+            },
+            status: true,
+        });
+    } catch (error) {
+        console.error("Error finding data:", error);
+        return res.status(500).json({
+            code: 1,
+            msg: "An error occurred",
+            data: {
+                amount: '0.00',
+            },
+            status: false,
+        });
+    }
+};
+
+const wingo3 = async (req, res) => {
+    try {
+        const [winGo1] = await connection.execute(
+            'SELECT * FROM `wingo` WHERE `game` = "wingo3" ORDER BY `id` DESC LIMIT 2',
+            []
+        );
+        const data = winGo1;
+
+        return res.status(200).json({
+            code: 0,
+            msg: "Get success",
+            data: {
+                data,
+            },
+            status: true,
+        });
+    } catch (error) {
+        console.error("Error finding data:", error);
+        return res.status(500).json({
+            code: 1,
+            msg: "An error occurred",
+            data: {
+                amount: '0.00',
+            },
+            status: false,
+        });
+    }
+};
+
+const wingo5 = async (req, res) => {
+    try {
+        const [winGo1] = await connection.execute(
+            'SELECT * FROM `wingo` WHERE `game` = "wingo5" ORDER BY `id` DESC LIMIT 2',
+            []
+        );
+        const data = winGo1;
+
+        return res.status(200).json({
+            code: 0,
+            msg: "Get success",
+            data: {
+                data,
+            },
+            status: true,
+        });
+    } catch (error) {
+        console.error("Error finding data:", error);
+        return res.status(500).json({
+            code: 1,
+            msg: "An error occurred",
+            data: {
+                amount: '0.00',
+            },
+            status: false,
+        });
+    }
+};
+
+const wingo10 = async (req, res) => {
+    try {
+        const [winGo1] = await connection.execute(
+            'SELECT * FROM `wingo` WHERE `game` = "wingo10" ORDER BY `id` DESC LIMIT 2',
+            []
+        );
+        const data = winGo1;
+
+        return res.status(200).json({
+            code: 0,
+            msg: "Get success",
+            data: {
+                data,
+            },
+            status: true,
+        });
+    } catch (error) {
+        console.error("Error finding data:", error);
+        return res.status(500).json({
+            code: 1,
+            msg: "An error occurred",
+            data: {
+                amount: '0.00',
+            },
+            status: false,
+        });
+    }
+};
+
 
 const updateTotalBet = async () => {
     try {
@@ -4754,7 +4924,8 @@ async function loginAviator(account, gameId) {
 
 
 async function getAviatorGame(req, res) {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     const [user] = await connection.query('SELECT `id`, `phone`, `code`, `invite`, `id_user` FROM users WHERE `token` = ?', [auth]);
     let userInfo = user[0];
 
@@ -4826,7 +4997,8 @@ async function exchangeTransfer(account, transactionId, amount, transferType) {
 
 
 async function aviatorMoneySend(req, res) {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     const [user] = await connection.query('SELECT `id`, `phone`, `code`, `invite`, `id_user`, `money`, `thirdparty_wallet` FROM users WHERE `token` = ?', [auth]);
     let userInfo = user[0];
 
@@ -4986,5 +5158,9 @@ module.exports = {
     updateTotalBet,
     getAviatorGame,
     aviatorMoneySend,
-    getThirdPartyBalance
+    getThirdPartyBalance,
+    wingo1,
+    wingo3,
+    wingo5,
+    wingo10
 }

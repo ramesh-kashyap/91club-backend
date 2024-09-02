@@ -168,7 +168,8 @@ const gamehistory = async(req, res) => {
 
 // member page
 const mianPage = async(req, res) => { 
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     const [user] = await connection.query('SELECT `level` FROM users WHERE `token` = ? ', [auth]);
     let level = user[0].level;
     return res.render("member/index.ejs", {level}); 
@@ -187,7 +188,8 @@ const newtutorial = async(req, res) => {
 }
 
 const forgot = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     const [user] = await connection.query('SELECT `time_otp` FROM users WHERE token = ? ', [auth]);
     let time = user[0].time_otp;
     return res.render("member/forgot.ejs", {time}); 
@@ -202,7 +204,8 @@ const riskAgreement = async(req, res) => {
 }
 
 const keFuMenu = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
 
     const [users] = await connection.query('SELECT `level`, `ctv` FROM users WHERE token = ?', [auth]);
 

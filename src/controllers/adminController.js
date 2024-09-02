@@ -105,7 +105,8 @@ const settings = async(req, res) => {
 // xác nhận admin
 const middlewareAdminController = async(req, res, next) => {
     // xác nhận token
-    const auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     if (!auth) {
         return res.redirect("/login");
     }
@@ -130,7 +131,8 @@ const middlewareAdminController = async(req, res, next) => {
 
 const middlewareMainAdminController = async (req, res, next) => {
     // Confirm token
-    const auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     if (!auth) {
         return res.redirect("/login");
     }
@@ -161,7 +163,8 @@ const middlewareMainAdminController = async (req, res, next) => {
 
 
 const totalJoin = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let typeid = req.body.typeid;
     if (!typeid) {
         return res.status(200).json({
@@ -320,7 +323,8 @@ const statistical2 = async(req, res) => {
 }
 
 const changeAdmin = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let value = req.body.value;
     let type = req.body.type;
     let typeid = req.body.typeid;
@@ -404,7 +408,8 @@ function timerJoin(params = '') {
 
 
   const userInfo = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let phone = req.body.phone;
     const timeNow = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
@@ -564,7 +569,8 @@ function timerJoin(params = '') {
 
 
 const recharge = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     if (!auth) {
         return res.status(200).json({
             message: 'Failed',
@@ -642,7 +648,8 @@ const recharge = async (req, res) => {
 
 
 const settingGet = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     if (!auth) {
         return res.status(200).json({
             message: 'Failed',
@@ -662,7 +669,8 @@ const settingGet = async(req, res) => {
 }
 
 const rechargeDuyet = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let id = req.body.id;
     let type = req.body.type;
 
@@ -922,7 +930,8 @@ const userBonus = async (money, phone) => {
 
 
 const handlWithdraw = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let id = req.body.id;
     let type = req.body.type;
     let paymentMode = req.body.paymentMode;
@@ -1069,7 +1078,8 @@ const handlWithdraw = async(req, res) => {
 }
 
 const settingBank = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let name_bank = req.body.name_bank;
     let name = req.body.name;
     let info = req.body.info;
@@ -1100,7 +1110,8 @@ const settingBank = async(req, res) => {
 }
 
 const settingCskh = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let telegram = req.body.telegram;
     let cskh = req.body.cskh;
     let myapp_web = req.body.myapp_web;
@@ -1119,7 +1130,8 @@ const settingCskh = async(req, res) => {
 }
 
 const banned = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let id = req.body.id;
     let type = req.body.type;
     if (!auth || !id) {
@@ -1175,7 +1187,8 @@ const createBonus = async(req, res) => {
     const d = new Date();
     const time = d.getTime();
 
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let money = req.body.money;
     let type = req.body.type;
 
@@ -1281,7 +1294,8 @@ const createBonus = async(req, res) => {
 }
 
 const listRedenvelops = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
 
     let [redenvelopes] = await connection.query('SELECT * FROM redenvelopes WHERE status = 0 ');
     return res.status(200).json({
@@ -1292,7 +1306,8 @@ const listRedenvelops = async(req, res) => {
 }
 
 const listSalaryBonus = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
 
     try {
         // Step 1: Get all redenvelopes
@@ -1322,7 +1337,8 @@ const listSalaryBonus = async (req, res) => {
 
 
 const settingbuff = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let id_user = req.body.id_user;
     let buff_acc = req.body.buff_acc;
     let money_value = req.body.money_value;
@@ -1808,7 +1824,8 @@ const infoCtv2 = async(req, res) => {
 }
 
 const listRechargeMem = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let phone = req.params.phone;
     let {pageno, limit } = req.body;
 
@@ -1865,7 +1882,8 @@ const listRechargeMem = async(req, res) => {
 }
 
 const listWithdrawMem = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let phone = req.params.phone;
     let {pageno, limit } = req.body;
 
@@ -1922,7 +1940,8 @@ const listWithdrawMem = async(req, res) => {
 }
 
 const listRedenvelope = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let phone = req.params.phone;
     let {pageno, limit } = req.body;
 
@@ -1979,7 +1998,8 @@ const listRedenvelope = async(req, res) => {
 }
 
 const listBet = async(req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let phone = req.params.phone;
     let {pageno, limit } = req.body;
 
@@ -2198,7 +2218,8 @@ const editResult2 = async(req, res) => {
 }
 
 const aiBonus = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     if (!auth) {
         return res.status(200).json({
             message: 'Failed',
@@ -2314,7 +2335,8 @@ const createSalary = async (req, res) => {
 
 
 const dailyBonus = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     if (!auth) {
         return res.status(200).json({
             message: 'Failed',
@@ -2357,7 +2379,8 @@ const dailyBonus = async (req, res) => {
 
 
 const updateIncomeStatus = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let id = req.body.id;
     let type = req.body.type;
     let timeNow = new Date().toISOString();
@@ -2406,7 +2429,8 @@ const updateIncomeStatus = async (req, res) => {
 };
 
 const incomeBonus = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let timeNow = new Date().toISOString();
 
     if (!auth) {
@@ -2451,7 +2475,8 @@ const incomeBonus = async (req, res) => {
 
 
 const listStreakBonuses = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     if (!auth) {
         return res.status(200).json({
             message: 'Failed',
@@ -2490,7 +2515,8 @@ const listStreakBonuses = async (req, res) => {
 };
 
 const updateStreakStatus = async (req, res) => {
-    let auth = req.cookies.auth;
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth =md5(authtoken);
     let id = req.body.id;
     let type = req.body.type;
     let timeNow = new Date().toISOString();
