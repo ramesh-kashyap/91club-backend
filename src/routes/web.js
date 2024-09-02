@@ -171,6 +171,10 @@ const initWebRouter = (app) => {
     router.post('/api/webapi/GetNoaverageEmerdList', middlewareController, winGoController.listOrderOld); // register
     router.post('/api/webapi/GetMyEmerdList', middlewareController, winGoController.GetMyEmerdList); // register
     router.post('/api/webapi/WingoBetList', middlewareController, winGoController.WingoBetList); // register
+    router.get('/api/webapi/Wingo1', middlewareController, userController.wingo1); // register
+    router.get('/api/webapi/Wingo3', middlewareController, userController.wingo3); // register
+    router.get('/api/webapi/Wingo5', middlewareController, userController.wingo5); // register
+    router.get('/api/webapi/Wingo10', middlewareController, userController.wingo10); // register
 
 
     router.post('/api/webapi/checkPeriodAndStage', middlewareController, winGoController.checkPeriodAndStage); // register

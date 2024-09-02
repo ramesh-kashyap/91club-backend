@@ -23,12 +23,15 @@ const socketIo = require('socket.io');
 
 const io = socketIo(server, {
     cors: {
-        origin: 'http://localhost:3001', // React app URL
+        origin: 'http://localhost:3001',
         methods: ['GET', 'POST'],
         credentials: true,
     },
+    pingInterval: 25000, // Ping the client every 25 seconds
+    pingTimeout: 60000,  // Close the connection if no pong is received within 60 seconds
 });
 
+  
 const port = process.env.PORT || 3000;
 app.use(cookieParser());
 app.use(languageMiddleware); // Use the correct middleware here

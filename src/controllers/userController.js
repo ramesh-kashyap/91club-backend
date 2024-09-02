@@ -4638,6 +4638,123 @@ const calculateTotal = async (phone, bet) => {
     }
 };
 
+const wingo1 = async (req, res) => {
+    try {
+        const [winGo1] = await connection.execute(
+            'SELECT * FROM `wingo` WHERE `game` = "wingo" ORDER BY `id` DESC LIMIT 2',
+            []
+        );
+        const data = winGo1;
+
+        return res.status(200).json({
+            code: 0,
+            msg: "Get success",
+            data: {
+                data,
+            },
+            status: true,
+        });
+    } catch (error) {
+        console.error("Error finding data:", error);
+        return res.status(500).json({
+            code: 1,
+            msg: "An error occurred",
+            data: {
+                amount: '0.00',
+            },
+            status: false,
+        });
+    }
+};
+
+const wingo3 = async (req, res) => {
+    try {
+        const [winGo1] = await connection.execute(
+            'SELECT * FROM `wingo` WHERE `game` = "wingo3" ORDER BY `id` DESC LIMIT 2',
+            []
+        );
+        const data = winGo1;
+
+        return res.status(200).json({
+            code: 0,
+            msg: "Get success",
+            data: {
+                data,
+            },
+            status: true,
+        });
+    } catch (error) {
+        console.error("Error finding data:", error);
+        return res.status(500).json({
+            code: 1,
+            msg: "An error occurred",
+            data: {
+                amount: '0.00',
+            },
+            status: false,
+        });
+    }
+};
+
+const wingo5 = async (req, res) => {
+    try {
+        const [winGo1] = await connection.execute(
+            'SELECT * FROM `wingo` WHERE `game` = "wingo5" ORDER BY `id` DESC LIMIT 2',
+            []
+        );
+        const data = winGo1;
+
+        return res.status(200).json({
+            code: 0,
+            msg: "Get success",
+            data: {
+                data,
+            },
+            status: true,
+        });
+    } catch (error) {
+        console.error("Error finding data:", error);
+        return res.status(500).json({
+            code: 1,
+            msg: "An error occurred",
+            data: {
+                amount: '0.00',
+            },
+            status: false,
+        });
+    }
+};
+
+const wingo10 = async (req, res) => {
+    try {
+        const [winGo1] = await connection.execute(
+            'SELECT * FROM `wingo` WHERE `game` = "wingo10" ORDER BY `id` DESC LIMIT 2',
+            []
+        );
+        const data = winGo1;
+
+        return res.status(200).json({
+            code: 0,
+            msg: "Get success",
+            data: {
+                data,
+            },
+            status: true,
+        });
+    } catch (error) {
+        console.error("Error finding data:", error);
+        return res.status(500).json({
+            code: 1,
+            msg: "An error occurred",
+            data: {
+                amount: '0.00',
+            },
+            status: false,
+        });
+    }
+};
+
+
 const updateTotalBet = async () => {
     try {
         console.log('Starting updateTotalBet function');
@@ -5041,5 +5158,9 @@ module.exports = {
     updateTotalBet,
     getAviatorGame,
     aviatorMoneySend,
-    getThirdPartyBalance
+    getThirdPartyBalance,
+    wingo1,
+    wingo3,
+    wingo5,
+    wingo10
 }
