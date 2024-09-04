@@ -1,4 +1,6 @@
 import connection from "../config/connectDB";
+import md5 from "md5";
+
 require('dotenv').config();
 
 const K3Page = async (req, res) => {
@@ -1437,6 +1439,7 @@ const listOrderOld = async (req, res) => {
             status: false
         });
     }
+    console.log(period[0]);
     if (!pageno || !pageto || !user[0] || !k5d[0] || !period[0]) {
         return res.status(200).json({
             message: 'Error!',
@@ -1517,7 +1520,7 @@ const GetMyEmerdList = async (req, res) => {
 
 module.exports = {
     K3Page,
-    betK3,
+    betK3betK3,
     addK3,
     handlingK3,
     listOrderOld,

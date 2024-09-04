@@ -56,7 +56,7 @@ function totalMoney4() {
     let listJoin2 = $('.bet-con[game="4"] .num-box:eq(2) .item.action');
 
     let listJoinHang2 = listJoin2.length;
-    let x2 = 0;
+    let x2 = 0; 
     if (listJoinHang2 >= 2) {
         if (listJoinHang2 <= 3) x2 = 1;
         if (listJoinHang2 == 4) x2 = 6;
