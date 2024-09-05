@@ -1520,7 +1520,7 @@ const GetMyEmerdList = async (req, res) => {
 
 module.exports = {
     K3Page,
-    betK3betK3,
+    betK3,
     addK3,
     handlingK3,
     listOrderOld,
