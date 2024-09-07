@@ -2383,7 +2383,7 @@ const infoUserBank = async(req, res) => {
             timeStamp: timeNow,
         })
     }
-    const [user] = await connection.query('SELECT `phone`, `code`,`invite`, `win_wallet`,`money` FROM users WHERE `token` = ? ', [auth]);
+    const [user] = await connection.query('SELECT `phone`, `code`,`invite`, `win_wallet`,`money`,`total_bet`,`able_to_bet`   FROM users WHERE `token` = ? ', [auth]);
     let userInfo = user[0];
     if(!user) {
         return res.status(200).json({
@@ -2703,13 +2703,11 @@ const withdrawal4 = async (req, res) => {
     const auth =md5(authtoken);
     let money = parseFloat(req.body.money);
     let paymentMode = req.body.paymentMode;
-    let password = req.body.password;
     const timeNow = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
     console.log('Payment Mode:', paymentMode);
     console.log('Money:', money);
     console.log('Auth:', auth);
-    console.log('Password:', password);
 
     if (!auth || !paymentMode || !money  || money < 10) {
         return res.status(200).json({
