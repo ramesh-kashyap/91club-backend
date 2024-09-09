@@ -270,14 +270,14 @@ const betK5D = async (req, res) => {
         const authtoken = req.headers['authorization']?.split(' ')[1];    
     const auth =md5(authtoken);
 
-        let validate = await validateBet(join, list_join, x, money, game);
+        // let validate = await validateBet(join, list_join, x, money, game);
 
-        if (!validate) {
-            return res.status(200).json({
-                message: 'Invalid bet',
-                status: false
-            });
-        }
+        // if (!validate) {
+        //     return res.status(200).json({
+        //         message: 'Invalid bet',
+        //         status: false
+        //     });
+        // }
 
         const [k5DNow] = await connection.query(`SELECT period FROM 5d WHERE status = 0 AND game = ${game} ORDER BY id DESC LIMIT 1 `);
         const [user] = await connection.query('SELECT `phone`, `code`, `invite`, `level`, `money` FROM users WHERE token = ? AND veri = 1  LIMIT 1 ', [auth]);
