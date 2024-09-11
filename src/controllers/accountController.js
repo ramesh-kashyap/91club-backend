@@ -60,31 +60,45 @@ const forgotPage = async(req, res) => {
     return res.render("account/forgot.ejs"); 
 }
 
-const login = async(req, res) => {
+const login = async (req, res) => {
     let { username, pwd } = req.body;
 
-    if (!username || !pwd || !username) {//!isNumber(username)
+    if (!username || !pwd) {
         return res.status(200).json({
-            message: 'ERROR!!!'
+            message: 'ERROR!!! Missing Fields'
         });
     }
 
     try {
-        const [rows] = await connection.query('SELECT * FROM users WHERE phone = ? AND password = ? ', [username, md5(pwd)]);
+        // Determine if username is a phone number or an email address
+        const isEmail = username.includes('@');
+        
+        // Modify the SQL query based on whether it's an email or phone number
+        const [rows] = await connection.query(
+            `SELECT * FROM users WHERE ${isEmail ? 'email' : 'phone'} = ? AND password = ?`,
+            [username, md5(pwd)]
+        );
+
         if (rows.length == 1) {
             if (rows[0].status == 1) {
                 const { password, money, ip, veri, ip_address, status, time, ...others } = rows[0];
                 const accessToken = jwt.sign({
-                    user: {...others },
-                    timeNow: timeNow
+                    user: { ...others },
+                    timeNow: new Date().toISOString()
                 }, process.env.JWT_ACCESS_TOKEN, { expiresIn: "1d" });
-                await connection.execute('UPDATE `users` SET `token` = ? ,`last_login` = ?  WHERE `phone` = ? ', [md5(accessToken), new Date() , username]);
+
+                // Update the user's token and last login time
+                await connection.execute(
+                    'UPDATE `users` SET `token` = ?, `last_login` = ? WHERE phone = ? OR email = ?',
+                    [md5(accessToken), new Date(), username, username]
+                );
+
                 return res.status(200).json({
-                    message: 'Login Sucess',
+                    message: 'Login Success',
                     status: true,
                     token: accessToken,
                     value: md5(accessToken)
-                }); 
+                });
             } else {
                 return res.status(200).json({
                     message: 'Account has been locked',
@@ -98,10 +112,13 @@ const login = async(req, res) => {
             });
         }
     } catch (error) {
-        if (error) console.log(error);
+        console.error('Login Error:', error);
+        return res.status(500).json({
+            message: 'Server error'
+        });
     }
+};
 
-}
 
 function generateKeyG() {
     const agentKey = '4ee779f236861f4bec5506a8c8a022e3a3f63528';
