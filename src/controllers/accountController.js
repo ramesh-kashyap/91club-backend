@@ -60,31 +60,45 @@ const forgotPage = async(req, res) => {
     return res.render("account/forgot.ejs"); 
 }
 
-const login = async(req, res) => {
+const login = async (req, res) => {
     let { username, pwd } = req.body;
 
-    if (!username || !pwd || !username) {//!isNumber(username)
+    if (!username || !pwd) {
         return res.status(200).json({
-            message: 'ERROR!!!'
+            message: 'ERROR!!! Missing Fields'
         });
     }
 
     try {
-        const [rows] = await connection.query('SELECT * FROM users WHERE phone = ? AND password = ? ', [username, md5(pwd)]);
+        // Determine if username is a phone number or an email address
+        const isEmail = username.includes('@');
+        
+        // Modify the SQL query based on whether it's an email or phone number
+        const [rows] = await connection.query(
+            `SELECT * FROM users WHERE ${isEmail ? 'email' : 'phone'} = ? AND password = ?`,
+            [username, md5(pwd)]
+        );
+
         if (rows.length == 1) {
             if (rows[0].status == 1) {
                 const { password, money, ip, veri, ip_address, status, time, ...others } = rows[0];
                 const accessToken = jwt.sign({
-                    user: {...others },
-                    timeNow: timeNow
+                    user: { ...others },
+                    timeNow: new Date().toISOString()
                 }, process.env.JWT_ACCESS_TOKEN, { expiresIn: "1d" });
-                await connection.execute('UPDATE `users` SET `token` = ? ,`last_login` = ?  WHERE `phone` = ? ', [md5(accessToken), new Date() , username]);
+
+                // Update the user's token and last login time
+                await connection.execute(
+                    'UPDATE `users` SET `token` = ?, `last_login` = ? WHERE phone = ? OR email = ?',
+                    [md5(accessToken), new Date(), username, username]
+                );
+
                 return res.status(200).json({
-                    message: 'Login Sucess',
+                    message: 'Login Success',
                     status: true,
                     token: accessToken,
                     value: md5(accessToken)
-                }); 
+                });
             } else {
                 return res.status(200).json({
                     message: 'Account has been locked',
@@ -98,10 +112,13 @@ const login = async(req, res) => {
             });
         }
     } catch (error) {
-        if (error) console.log(error);
+        console.error('Login Error:', error);
+        return res.status(500).json({
+            message: 'Server error'
+        });
     }
+};
 
-}
 
 function generateKeyG() {
     const agentKey = '4ee779f236861f4bec5506a8c8a022e3a3f63528';
@@ -164,10 +181,10 @@ const register = async (req, res) => {
     let id_user = randomNumber(10000, 99999);
     let otp2 = randomNumber(100000, 999999);
     let name_user = "Member" + randomNumber(10000, 99999);
-    let code = randomString(5) + randomNumber(10000, 99999);
     let ip = ipAddress(req);
     let time = timeCreate();
 
+    // Validate if required fields are provided
     if (!username || !pwd || !invitecode) {
         return res.status(200).json({
             message: 'ERROR!!!',
@@ -175,11 +192,36 @@ const register = async (req, res) => {
         });
     }
 
+    // Validate username (phone number)
     if (username.length < 9 || username.length > 10 || !isNumber(username)) {
         return res.status(200).json({
-            message: 'phone error',
+            message: 'Phone error',
             status: false
         });
+    }
+
+    // Validate password: at least 8 characters, containing at least one number and one letter
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+    if (!passwordRegex.test(pwd)) {
+        return res.status(200).json({
+            message: 'Password must be at least 8 characters long and contain at least one number and one letter.',
+            status: false
+        });
+    }
+
+    // Generate a unique 10-digit code and check if it exists in the database
+    let code;
+    let uniqueCodeGenerated = false;
+
+    while (!uniqueCodeGenerated) {
+        code = randomNumber(1000000000, 9999999999); // Generate 10-digit random number
+
+        // Check if the generated code exists in the 'users' table
+        const [check_code] = await connection.query('SELECT * FROM users WHERE code = ?', [code]);
+
+        if (check_code.length === 0) {
+            uniqueCodeGenerated = true; // If code is not found, it's unique
+        }
     }
 
     try {
@@ -187,7 +229,7 @@ const register = async (req, res) => {
         const [check_i] = await connection.query('SELECT * FROM users WHERE code = ?', [invitecode]);
         const [check_ip] = await connection.query('SELECT * FROM users WHERE ip_address = ?', [ip]);
 
-        if (check_u.length == 1 && check_u[0].veri == 1) {
+        if (check_u.length === 1 && check_u[0].veri == 1) {
             return res.status(200).json({
                 message: 'Phone number has been registered',
                 status: false
@@ -212,8 +254,9 @@ const register = async (req, res) => {
                         }
                     }
 
-                    const sql = "INSERT INTO users SET id_user = ?,phone = ?,name_user = ?,password = ?,money = ?,code = ?,invite = ?,ctv = ?,veri = ?,otp = ?,ip_address = ?,status = ?,time = ?,ps = ?,vip_level = ?,experience =? , attendance = ?";
+                    const sql = "INSERT INTO users SET id_user = ?, phone = ?, name_user = ?, password = ?, money = ?, code = ?, invite = ?, ctv = ?, veri = ?, otp = ?, ip_address = ?, status = ?, time = ?, ps = ?, vip_level = ?, experience = ?, attendance = ?";
                     await connection.execute(sql, [id_user, username, name_user, md5(pwd), 0, code, invitecode, ctv, 1, otp2, ip, 1, time, pwd, 0, 0, 0]);
+
                     await connection.execute('INSERT INTO point_list SET phone = ?', [username]);
                     await connection.execute('INSERT INTO team_income SET phone = ?, code = ?, invite = ?, f1 = ?, f2 = ?, f3 = ?, f4 = ?, f5 = ?, f6 = ?, time = ?', [username, code, invitecode, '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', time]);
 
@@ -232,7 +275,7 @@ const register = async (req, res) => {
                         await connection.execute(incomeSql, [userInfo.id, registrationBonus, registrationBonus, 'Registration Bonus', username]);
 
                         const updateUserMoneySql = 'UPDATE users SET money = money + ?, able_to_bet = able_to_bet + ? WHERE id = ?';
-                         await connection.execute(updateUserMoneySql, [registrationBonus, registrationBonus, userInfo.id]);
+                        await connection.execute(updateUserMoneySql, [registrationBonus, registrationBonus, userInfo.id]);
 
                         return res.status(200).json({
                             message: 'Register Success',
@@ -265,7 +308,8 @@ const register = async (req, res) => {
             status: false
         });
     }
-}
+};
+
 
 
 const verifyCode = async(req, res) => {

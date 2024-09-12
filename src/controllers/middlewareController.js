@@ -22,7 +22,7 @@ const middlewareController = async (req, res, next) => {
 
         next(); // Continue to the next middleware or route handler
     } catch (error) {
-        return res.status(500).json({ message: 'Internal Server Error' });
+        return res.status(200).json({ message: 'Internal Server Error' });
     }
 };
 
