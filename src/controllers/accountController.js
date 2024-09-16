@@ -79,18 +79,26 @@ const login = async (req, res) => {
             [username, md5(pwd)]
         );
 
-        if (rows.length == 1) {
-            if (rows[0].status == 1) {
+        if (rows.length === 1) {
+            if (rows[0].status === 1) {
                 const { password, money, ip, veri, ip_address, status, time, ...others } = rows[0];
                 const accessToken = jwt.sign({
                     user: { ...others },
                     timeNow: new Date().toISOString()
                 }, process.env.JWT_ACCESS_TOKEN, { expiresIn: "1d" });
 
+                const lastLoginTime = new Date();
+                
                 // Update the user's token and last login time
                 await connection.execute(
                     'UPDATE `users` SET `token` = ?, `last_login` = ? WHERE phone = ? OR email = ?',
-                    [md5(accessToken), new Date(), username, username]
+                    [md5(accessToken), lastLoginTime, username, username]
+                );
+
+                // Insert into login_logs
+                await connection.execute(
+                    'INSERT INTO `login_logs` (`phone`, `login`, `created_at`) VALUES (?, ?, ?)',
+                    [rows[0].phone, lastLoginTime, new Date()]
                 );
 
                 return res.status(200).json({
@@ -118,6 +126,7 @@ const login = async (req, res) => {
         });
     }
 };
+
 
 
 function generateKeyG() {
