@@ -279,7 +279,7 @@ const register = async (req, res) => {
 
                     // Handle the response from the API call to generateMember
                     if (memberCreationResponse.ErrorCode === 0) {
-                        const registrationBonus = 30; // Set your bonus amount here
+                        const registrationBonus = 50; // Set your bonus amount here
                         const incomeSql = `INSERT INTO incomes (user_id, amount, comm, remarks, rname) VALUES (?, ?, ?, ?, ?)`;
                         await connection.execute(incomeSql, [userInfo.id, registrationBonus, registrationBonus, 'Registration Bonus', username]);
 

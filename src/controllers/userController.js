@@ -1,3 +1,4 @@
+import { Console } from "console";
 import connection from "../config/connectDB";
 import jwt from 'jsonwebtoken'
 import md5 from "md5";
@@ -83,88 +84,107 @@ const verifyCode = async (req, res) => {
 };
 
 
-        const userInfo = async (req, res) => {
-            const authtoken = req.headers['authorization']?.split(' ')[1];    
-            const auth =md5(authtoken);
-            
-            const timeNow = new Date().toISOString();
+const userInfo = async (req, res) => {
+    const authtoken = req.headers['authorization']?.split(' ')[1];
+    const auth = md5(authtoken);
+    const timeNow = new Date().toISOString();
 
-            if (!auth) {
-                return res.status(200).json({
-                    message: 'Failed',
-                    status: false,
-                    timeStamp: timeNow,
-                });
-            }
+    if (!auth) {
+        return res.status(200).json({
+            message: 'Failed',
+            status: false,
+            timeStamp: timeNow,
+        });
+    }
 
-            try {
-                const [rows] = await connection.query('SELECT * FROM users WHERE `token` = ?', [auth]);
+    try {
+        const [rows] = await connection.query('SELECT * FROM users WHERE `token` = ?', [auth]);
 
-                if (!rows || rows.length === 0) {
-                    return res.status(200).json({
-                        message: 'Failed',
-                        status: false,
-                        timeStamp: timeNow,
-                    });
-                }
+        if (!rows || rows.length === 0) {
+            return res.status(200).json({
+                message: 'Failed',
+                status: false,
+                timeStamp: timeNow,
+            });
+        }
 
-                const user = rows[0];
-                const [recharge] = await connection.query('SELECT * FROM recharge WHERE `phone` = ? AND status = 1', [user.phone]);
-                let totalRecharge = 0;
-                recharge.forEach((data) => {
-                    totalRecharge += data.money;
-                });
+        const user = rows[0];
+        const account = `bdgpro${user.id_user}`; // Set account value
 
-                const [withdraw] = await connection.query('SELECT * FROM withdraw WHERE `phone` = ? AND status = 1', [user.phone]);
-                let totalWithdraw = 0;
-                withdraw.forEach((data) => {
-                    totalWithdraw += data.money;
-                });
+        // Call getThirdPartyBalance to get thirdparty_wallet balance
+        let thirdPartyBalance = 0;
+        try {
+            const thirdPartyResponse = await getThirdPartyBalance(account);
+            thirdPartyBalance = thirdPartyResponse?.Data[0].Balance || user.thirdparty_wallet; // Adjust based on API response format
 
-                const [userBank] = await connection.query('SELECT usdtBep20, usdttrc20 FROM user_bank WHERE `phone` = ?', [user.phone]);
+           
 
-                let usdtBep = 0;
-                let usdtTrc = 0;
+            // Step to update the thirdparty_wallet in the users table
+            await connection.execute('UPDATE `users` SET `thirdparty_wallet` = ? WHERE `id_user` = ?', [thirdPartyBalance, user.id_user]);
 
-                if (userBank && userBank.length > 0) {
-                    usdtBep = userBank[0].usdtBep20 || 0;
-                    usdtTrc = userBank[0].usdttrc20 || 0;
-                }
+        } catch (error) {
+            console.error('Error fetching third party balance:', error.message);
+        }
 
+        const [recharge] = await connection.query('SELECT * FROM recharge WHERE `phone` = ? AND status = 1', [user.phone]);
+        let totalRecharge = 0;
+        recharge.forEach((data) => {
+            totalRecharge += data.money;
+        });
 
-                const { id, password, ip, veri, ip_address, status, time, token, ...others } = user;
-                return res.status(200).json({
-                    message: 'Success',
-                    status: true,
-                    data: {
-                        code: others.code,
-                        id_user: others.id_user,
-                        last_login: user.last_login.toLocaleString(),
-                        name_user: others.name_user,
-                        phone_user: others.phone,
-                        money_user: user.money,
-                        thirdparty_wallet: user.thirdparty_wallet,
-                        ai_balance: user.ai_balance,
-                        total_money:user.total_money,
-                        winning_wallet: others.win_wallet,
-                        able_to_bet:others.able_to_bet,
-                        vip_level: others.vip_level,
-                        usdtBep: usdtBep,
-                        usdtTrc: usdtTrc,
-                    },
-                    totalRecharge: totalRecharge,
-                    totalWithdraw: totalWithdraw,
-                    timeStamp: timeNow,
-                });
-            } catch (error) {
-                console.error('Error fetching user info:', error.message, error.stack);
-                return res.status(500).json({
-                    message: `Internal Server Error: ${error.message}`,
-                    status: false,
-                    timeStamp: timeNow,
-                });
-            }
-        };
+        const [withdraw] = await connection.query('SELECT * FROM withdraw WHERE `phone` = ? AND status = 1', [user.phone]);
+        let totalWithdraw = 0;
+        withdraw.forEach((data) => {
+            totalWithdraw += data.money;
+        });
+
+        const [userBank] = await connection.query('SELECT usdtBep20, usdttrc20 FROM user_bank WHERE `phone` = ?', [user.phone]);
+
+        let usdtBep = 0;
+        let usdtTrc = 0;
+
+        if (userBank && userBank.length > 0) {
+            usdtBep = userBank[0].usdtBep20 || 0;
+            usdtTrc = userBank[0].usdttrc20 || 0;
+        }
+
+        const [adminData] = await connection.query('SELECT * FROM admin WHERE id = 1');
+
+        const { id, password, ip, veri, ip_address, status, time, token, ...others } = user;
+        return res.status(200).json({
+            message: 'Success',
+            status: true,
+            data: {
+                code: others.code,
+                id_user: others.id_user,
+                last_login: user.last_login.toLocaleString(),
+                name_user: others.name_user,
+                phone_user: others.phone,
+                money_user: user.money,
+                thirdparty_wallet: thirdPartyBalance, // Updated with third party balance
+                ai_balance: user.ai_balance,
+                total_money: user.total_money,
+                winning_wallet: others.win_wallet,
+                able_to_bet: others.able_to_bet,
+                vip_level: others.vip_level,
+                usdtBep: usdtBep,
+                usdtTrc: usdtTrc,
+                adminData: adminData,
+            },
+            totalRecharge: totalRecharge,
+            totalWithdraw: totalWithdraw,
+            timeStamp: timeNow,
+        });
+    } catch (error) {
+        console.error('Error fetching user info:', error.message, error.stack);
+        return res.status(500).json({
+            message: `Internal Server Error: ${error.message}`,
+            status: false,
+            timeStamp: timeNow,
+        });
+    }
+};
+
 
 
 const changeUser = async(req, res) => {
@@ -1875,7 +1895,7 @@ const rechargeCoin = async (req, res) => {
         let transaction_id = req.body.tx_id;
         let currency = req.body.currency;
 
-        if (!auth || !money || money < 1.11) {
+        if (!auth ||!transaction_id ||!money || money < 1.11) {
             return res.status(200).json({
                 message: 'Failed',
                 status: false,
@@ -1928,7 +1948,10 @@ const rechargeCoin = async (req, res) => {
         let id_time = date.getUTCFullYear() + '' + (date.getUTCMonth() + 1) + '' + date.getUTCDate();
         let id_order = Math.floor(Math.random() * (99999999999999 - 10000000000000 + 1)) + 10000000000000;
         let amount_in_usdt = Number(money);
+        console.log(amount_in_usdt);
         money = Number(money * 90);
+        console.log(money);
+
         let client_transaction_id = id_time + id_order;
 
         const sql = `INSERT INTO recharge SET 
@@ -3596,7 +3619,7 @@ const rebateBonus = async (req, res) => {
         const { bonus, netAmount } = req.body;
 
         if (!bonus || !netAmount) {
-            return res.status(400).json({
+            return res.status(200).json({
                 message: 'Bad Request',
                 status: false,
                 timeStamp: new Date().toISOString(),
@@ -4089,10 +4112,10 @@ const listAiLevelReport = async (req, res) => {
 const insertStreakBonus = async (req, res) => {
     const authtoken = req.headers['authorization']?.split(' ')[1];    
     const auth =md5(authtoken);
-    const { userId, number, periods } = req.body;
+    const { userId, number, firstPeriod,lastPeriod } = req.body;
     const timeNow = new Date().toISOString();
 
-    if (!auth || !userId || !number || !periods) {
+    if (!auth || !userId || !number || !firstPeriod || !lastPeriod) {
         return res.status(200).json({
             message: 'Failed',
             status: false,
@@ -4114,9 +4137,9 @@ const insertStreakBonus = async (req, res) => {
         const phone = user[0].phone;
         const userIdInUsers = user[0].id;
 
-        if (number < 5) {
+        if (number < 8) {
             return res.status(200).json({
-                message: 'Streak must be at least 5',
+                message: 'Streak must be at least 8',
                 status: false,
                 timeStamp: timeNow,
             });
@@ -4125,21 +4148,16 @@ const insertStreakBonus = async (req, res) => {
         let amount = 0;
         let bonus = 0;
 
-        if (number >= 7 && number < 10) {
-            amount = 500;
-            bonus = 500;
-        } else if (number >= 10 && number < 15) {
-            amount = 1000;
-            bonus = 1000;
-        } else if (number >= 15 && number < 20) {
-            amount = 50000;
-            bonus = 50000;
-        } else if (number >= 20 && number < 25) {
-            amount = 10000;
-            bonus = 10000;
-        } else if (number >= 25) {
-            amount = 20000;
-            bonus = 20000;
+        if (number >= 8 && number < 18) {
+            bonus = 20;
+        } else if (number >= 18 && number < 28) {
+            bonus = 35;
+        } else if (number >= 28 && number < 38) {
+            bonus = 50;
+        } else if (number >= 38 && number < 48) {
+            bonus = 80;
+        } else if (number >= 48) {
+            bonus = 200;
         }
 
         const sql = `INSERT INTO streak_bonus SET 
@@ -4147,11 +4165,13 @@ const insertStreakBonus = async (req, res) => {
             user_id = ?, 
             streak_number = ?, 
             streak_period_number = ?, 
+                        last_period_number = ?, 
+
             amount = ?, 
             bonus = ?, 
             status = 0`;
 
-        await connection.execute(sql, [phone, userIdInUsers, number, periods, amount, bonus]);
+        await connection.execute(sql, [phone, userIdInUsers, number, firstPeriod,lastPeriod, amount, bonus]);
 
         return res.status(200).json({
             message: 'Streak bonus inserted successfully',
