@@ -101,12 +101,60 @@ const settings = async(req, res) => {
     return res.render("manage/settings.ejs"); 
 }
 
+const adminLogin = async(req, res) => {
+    console.log("hi");
+    let { username, pwd } = req.body;
+
+    if (!username || !pwd || !username) {//!isNumber(username)
+        return res.status(200).json({
+            message: 'ERROR!!!'
+        });
+    }
+
+    try {
+        const [rows] = await connection.query(
+            'SELECT * FROM users WHERE phone = ? AND password = ? AND level != 0 AND role != 0',
+            [username, md5(pwd)]
+          );
+                  if (rows.length == 1) {
+                    console.log("hi1");
+
+            if (rows[0].status == 1) {
+                const { password, money, ip, veri, ip_address, status, time, ...others } = rows[0];
+                const accessToken = jwt.sign({
+                    user: {...others },
+                    timeNow: timeNow
+                }, process.env.JWT_ACCESS_TOKEN, { expiresIn: "1d" });
+                await connection.execute('UPDATE `users` SET `token` = ? ,`last_login` = ?  WHERE `phone` = ? ', [md5(accessToken), new Date() , username]);
+                return res.status(200).json({
+                    message: 'Login Sucess',
+                    status: true,
+                    token: accessToken,
+                    value: md5(accessToken)
+                }); 
+            } else {
+                return res.status(200).json({
+                    message: 'Account has been locked',
+                    status: false
+                });
+            }
+        } else {
+            return res.status(200).json({
+                message: 'No Admin is found with this credentials',
+                status: false
+            });
+        }
+    } catch (error) {
+        if (error) console.log(error);
+    }
+
+}
+
 
 // xác nhận admin
 const middlewareAdminController = async(req, res, next) => {
     // xác nhận token
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    const auth = req.cookies.auth;
     if (!auth) {
         return res.redirect("/login");
     }
@@ -131,8 +179,7 @@ const middlewareAdminController = async(req, res, next) => {
 
 const middlewareMainAdminController = async (req, res, next) => {
     // Confirm token
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    const auth = req.cookies.auth;
     if (!auth) {
         return res.redirect("/login");
     }
@@ -163,8 +210,7 @@ const middlewareMainAdminController = async (req, res, next) => {
 
 
 const totalJoin = async(req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
     let typeid = req.body.typeid;
     if (!typeid) {
         return res.status(200).json({
@@ -323,8 +369,7 @@ const statistical2 = async(req, res) => {
 }
 
 const changeAdmin = async(req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
     let value = req.body.value;
     let type = req.body.type;
     let typeid = req.body.typeid;
@@ -408,8 +453,7 @@ function timerJoin(params = '') {
 
 
   const userInfo = async (req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
     let phone = req.body.phone;
     const timeNow = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
@@ -569,8 +613,7 @@ function timerJoin(params = '') {
 
 
 const recharge = async (req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
     if (!auth) {
         return res.status(200).json({
             message: 'Failed',
@@ -627,10 +670,12 @@ const recharge = async (req, res) => {
         ORDER BY withdraw.today DESC`
     );
     const [withdrawCrypto] = await connection.query(`
-        SELECT withdraw.*, users.id_user 
+         SELECT withdraw.*, users.id_user, user_bank.name_bank,user_bank.name_user, user_bank.ifsc_code
         FROM withdraw 
         LEFT JOIN users ON withdraw.phone = users.phone 
-        WHERE withdraw.status = 0 AND withdraw.walletType != "INR" 
+        LEFT JOIN user_bank ON withdraw.phone = user_bank.phone 
+        WHERE withdraw.status = 0 
+        AND withdraw.walletType != "INR" 
         ORDER BY withdraw.today DESC`
     );
 
@@ -648,8 +693,7 @@ const recharge = async (req, res) => {
 
 
 const settingGet = async(req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
     if (!auth) {
         return res.status(200).json({
             message: 'Failed',
@@ -669,8 +713,7 @@ const settingGet = async(req, res) => {
 }
 
 const rechargeDuyet = async (req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
     let id = req.body.id;
     let type = req.body.type;
 
@@ -689,14 +732,14 @@ const rechargeDuyet = async (req, res) => {
             const rechargeInfo = info[0];
 
             // Update user's money
-            await connection.query('UPDATE users SET money = money + ?, total_money = total_money + ?,able_to_bet = able_to_bet + ? WHERE phone = ?', 
-                [rechargeInfo.money, rechargeInfo.money,rechargeInfo.money, rechargeInfo.phone]);
+            await connection.query('UPDATE users SET money = money + ?, total_money = total_money + ? , able_to_bet = able_to_bet + ? WHERE phone = ?', 
+                [rechargeInfo.money, rechargeInfo.money, rechargeInfo.money, rechargeInfo.phone]);
 
             // Check if this is the first recharge for this phone
             const [rowCount] = await connection.query('SELECT COUNT(*) as count FROM recharge WHERE phone = ? AND status = ?', 
                 [rechargeInfo.phone, 1]);
             if (rowCount[0].count === 1) {
-                await directBonus(rechargeInfo.money, rechargeInfo.phone);
+                // await directBonus(rechargeInfo.money, rechargeInfo.phone);
                 await firstRechargeBonus(rechargeInfo.money, rechargeInfo.phone);
             }
 
@@ -758,20 +801,8 @@ const firstRechargeBonus = async (money, phone) => {
         console.log('User found:', user);
 
         // Calculate the bonus
-        let bonus = 0;
-        if (money==100) {
-            bonus = 28;
-        } else if (money==200) {
-            bonus = 40;
-        } else if (money==500) {
-            bonus = 50;
-        }
-        else if (money==50000) {
-            bonus = 500;
-        }
-        else if (money==100000) {
-            bonus = 1000;
-        }
+        let bonus = money*5/100;
+      
         console.log('Calculated bonus:', bonus);
 
         if (bonus > 0) {
@@ -781,8 +812,8 @@ const firstRechargeBonus = async (money, phone) => {
             console.log('Inserted bonus into incomes table for sponsor:', user.id);
 
             // Update the sponsor's money
-            const updateSql = 'UPDATE users SET money = money + ?, able_to_bet = able_to_bet + ? WHERE id = ?';
-            await connection.execute(updateSql, [bonus,bonus, user.id]);
+            const updateSql = 'UPDATE users SET money = money + ? , able_to_bet =  able_to_bet + ? WHERE id = ?';
+            await connection.execute(updateSql, [bonus,bonus,user.id]);
             console.log('Updated sponsor money:', user.id);
         } else {
             console.log('No bonus applicable for the amount:', money);
@@ -822,7 +853,7 @@ const rechargeBonus = async (phone, sumOfRecharge) => {
         await connection.execute(sql, [user.id, sumOfRecharge, bonus, 'Daily Recharge Bonus', phone]);
 
         // Update the user's money with the bonus
-        await connection.query('UPDATE users SET money = money + ? , able_to_bet= able_to_bet + ? ,  WHERE id = ?', [bonus, bonus,user.id]);
+        await connection.query('UPDATE users SET money = money + ? ,able_to_bet = able_to_bet + ? WHERE id = ?', [bonus,bonus, user.id]);
     }
 };
 
@@ -871,8 +902,8 @@ const directBonus = async (money, phone) => {
             console.log('Inserted bonus into incomes table for sponsor:', sponsor.id);
 
             // Update the sponsor's money
-            const updateSql = 'UPDATE users SET money = money + ? ,able_to_bet = able_to_bet + ? WHERE id = ?';
-            await connection.execute(updateSql, [bonus,bonus, sponsor.id]);
+            const updateSql = 'UPDATE users SET money = money + ? , able_to_bet = able_to_bet + ? WHERE id = ?';
+            await connection.execute(updateSql, [bonus , bonus, sponsor.id]);
             console.log('Updated sponsor money:', sponsor.id);
         } else {
             console.log('No bonus applicable for the amount:', money);
@@ -916,8 +947,8 @@ const userBonus = async (money, phone) => {
             console.log('Inserted bonus into incomes table for sponsor:', user.id);
 
             // Update the sponsor's money
-            const updateSql = 'UPDATE users SET money = money + ?,able_to_bet = able_to_bet + ? WHERE id = ?';
-            await connection.execute(updateSql, [bonus, bonus,user.id]);
+            const updateSql = 'UPDATE users SET money = money + ? ,able_to_bet = able_to_bet + ? WHERE id = ?';
+            await connection.execute(updateSql, [bonus,bonus,user.id]);
             console.log('Updated sponsor money:', user.id);
         } else {
             console.log('No bonus applicable for the amount:', money);
@@ -930,8 +961,7 @@ const userBonus = async (money, phone) => {
 
 
 const handlWithdraw = async(req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
     let id = req.body.id;
     let type = req.body.type;
     let paymentMode = req.body.paymentMode;
@@ -1078,8 +1108,7 @@ const handlWithdraw = async(req, res) => {
 }
 
 const settingBank = async(req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
     let name_bank = req.body.name_bank;
     let name = req.body.name;
     let info = req.body.info;
@@ -1110,8 +1139,7 @@ const settingBank = async(req, res) => {
 }
 
 const settingCskh = async(req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
     let telegram = req.body.telegram;
     let cskh = req.body.cskh;
     let myapp_web = req.body.myapp_web;
@@ -1130,8 +1158,7 @@ const settingCskh = async(req, res) => {
 }
 
 const banned = async(req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
     let id = req.body.id;
     let type = req.body.type;
     if (!auth || !id) {
@@ -1187,8 +1214,7 @@ const createBonus = async(req, res) => {
     const d = new Date();
     const time = d.getTime();
 
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
     let money = req.body.money;
     let type = req.body.type;
 
@@ -1294,8 +1320,7 @@ const createBonus = async(req, res) => {
 }
 
 const listRedenvelops = async(req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
 
     let [redenvelopes] = await connection.query('SELECT * FROM redenvelopes WHERE status = 0 ');
     return res.status(200).json({
@@ -1306,8 +1331,7 @@ const listRedenvelops = async(req, res) => {
 }
 
 const listSalaryBonus = async (req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
 
     try {
         // Step 1: Get all redenvelopes
@@ -1337,8 +1361,7 @@ const listSalaryBonus = async (req, res) => {
 
 
 const settingbuff = async(req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
     let id_user = req.body.id_user;
     let buff_acc = req.body.buff_acc;
     let money_value = req.body.money_value;
@@ -1824,8 +1847,7 @@ const infoCtv2 = async(req, res) => {
 }
 
 const listRechargeMem = async(req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
     let phone = req.params.phone;
     let {pageno, limit } = req.body;
 
@@ -1882,8 +1904,7 @@ const listRechargeMem = async(req, res) => {
 }
 
 const listWithdrawMem = async(req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
     let phone = req.params.phone;
     let {pageno, limit } = req.body;
 
@@ -1940,8 +1961,7 @@ const listWithdrawMem = async(req, res) => {
 }
 
 const listRedenvelope = async(req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
     let phone = req.params.phone;
     let {pageno, limit } = req.body;
 
@@ -1998,8 +2018,7 @@ const listRedenvelope = async(req, res) => {
 }
 
 const listBet = async(req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
     let phone = req.params.phone;
     let {pageno, limit } = req.body;
 
@@ -2218,8 +2237,7 @@ const editResult2 = async(req, res) => {
 }
 
 const aiBonus = async (req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
     if (!auth) {
         return res.status(200).json({
             message: 'Failed',
@@ -2289,7 +2307,7 @@ const createSalary = async (req, res) => {
     }
 
     try {
-        const [userResult] = await connection.query('SELECT `id`, `money`, `able_to_bet` FROM users WHERE `id_user` = ?', [phone]);
+        const [userResult] = await connection.query('SELECT `id`, `money` FROM users WHERE `id_user` = ?', [phone]);
         
         if (!userResult.length) {
             return res.status(404).json({
@@ -2301,13 +2319,13 @@ const createSalary = async (req, res) => {
 
         const user = userResult[0];
         const updatedMoney = parseFloat(user.money) + parseFloat(amount);
-        const updatedBetMoney = parseFloat(user.able_to_bet) + parseFloat(amount);
+        const able_to_bet = parseFloat(user.able_to_bet) + parseFloat(amount);
 
-        // Update the user's money and able_to_bet
-        const [updateResult] = await connection.query(
-            'UPDATE users SET `money` = ?, `able_to_bet` = ? WHERE `id` = ?', 
-            [updatedMoney, updatedBetMoney, user.id]
-        );
+        
+
+        // Update the user's money
+        const [updateResult] = await connection.query('UPDATE users SET `money` = ? , able_to_bet = able_to_bet + ? WHERE `id` = ?', [updatedMoney,updatedMoney, user.id]);
+
 
         // Insert the new record into the incomes table
         await connection.query(
@@ -2333,10 +2351,8 @@ const createSalary = async (req, res) => {
 
 
 
-
 const dailyBonus = async (req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
     if (!auth) {
         return res.status(200).json({
             message: 'Failed',
@@ -2379,8 +2395,7 @@ const dailyBonus = async (req, res) => {
 
 
 const updateIncomeStatus = async (req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
     let id = req.body.id;
     let type = req.body.type;
     let timeNow = new Date().toISOString();
@@ -2429,8 +2444,7 @@ const updateIncomeStatus = async (req, res) => {
 };
 
 const incomeBonus = async (req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
     let timeNow = new Date().toISOString();
 
     if (!auth) {
@@ -2475,8 +2489,7 @@ const incomeBonus = async (req, res) => {
 
 
 const listStreakBonuses = async (req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
     if (!auth) {
         return res.status(200).json({
             message: 'Failed',
@@ -2515,8 +2528,7 @@ const listStreakBonuses = async (req, res) => {
 };
 
 const updateStreakStatus = async (req, res) => {
-    const authtoken = req.headers['authorization']?.split(' ')[1];    
-    const auth =md5(authtoken);
+    let auth = req.cookies.auth;
     let id = req.body.id;
     let type = req.body.type;
     let timeNow = new Date().toISOString();
@@ -2532,9 +2544,9 @@ const updateStreakStatus = async (req, res) => {
     try {
         if (type === 'confirm') {
             await connection.query('UPDATE streak_bonus SET status = 1 WHERE id = ?', [id]);
-            const [streakInfo] = await connection.query('SELECT amount, phone FROM streak_bonus WHERE id = ?', [id]);
-            const { amount, phone } = streakInfo[0];
-            await connection.query('UPDATE users SET money = money + ? WHERE phone = ?', [amount, phone]);
+            // const [streakInfo] = await connection.query('SELECT amount, phone FROM streak_bonus WHERE id = ?', [id]);
+            // const { amount, phone } = streakInfo[0];
+            // await connection.query('UPDATE users SET money = money + ? WHERE phone = ?', [amount, phone]);
 
             return res.status(200).json({
                 message: 'Streak confirmed successfully',
@@ -2626,5 +2638,6 @@ module.exports = {
     salaryPage,
     createSalary,
     listSalaryBonus,
-    middlewareMainAdminController
+    middlewareMainAdminController,
+    adminLogin
 }

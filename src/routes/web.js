@@ -91,6 +91,7 @@ const initWebRouter = (app) => {
 //aviator
     router.post('/aviatorgame/:gameID', middlewareController, userController.getAviatorGame);
     router.post('/aviatorMoneySend', middlewareController, userController.aviatorMoneySend);
+    router.post('/moneyTransfer', middlewareController, userController.moneyTransfer);
 
 
 
@@ -117,7 +118,8 @@ const initWebRouter = (app) => {
     router.get('/api/webapi/getVipDetails', middlewareController, userController.getVipDetails);
     router.post('/api/webapi/claimLevelUpBonus', middlewareController, userController.claimLevelUpBonus); // attendance
     router.get('/api/webapi/vipHistory', middlewareController, userController.vipHistory); // register
-   
+    router.get('/api/webapi/loginLogs', middlewareController, userController.loginLogs); // register
+
 
     // hi
 
@@ -260,6 +262,7 @@ const initWebRouter = (app) => {
 
 
     // admin
+    router.post('/admin/login', adminController.middlewareAdminController, adminController.adminLogin); // login
     router.get('/admin/manager/index', adminController.middlewareAdminController, adminController.adminPage); // get info account
     router.get('/admin/manager/index/3', adminController.middlewareAdminController, adminController.adminPage3); // get info account
     router.get('/admin/manager/index/5', adminController.middlewareAdminController, adminController.adminPage5); // get info account
