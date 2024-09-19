@@ -801,7 +801,19 @@ const firstRechargeBonus = async (money, phone) => {
         console.log('User found:', user);
 
         // Calculate the bonus
-        let bonus = money*5/100;
+        let bonus = 0;
+
+        if (money >= 100 && money < 300) {
+            bonus = 20;
+        } else if (money >= 300 && money < 1000) {
+            bonus = 60;
+        } else if (money >= 1000 && money < 3000) {
+            bonus = 150;
+        }  else if (money >= 3000) {
+            bonus = 300;
+        }
+
+
       
         console.log('Calculated bonus:', bonus);
 
