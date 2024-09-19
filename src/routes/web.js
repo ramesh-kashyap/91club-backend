@@ -167,6 +167,9 @@ const initWebRouter = (app) => {
     router.get('/api/webapi/GetUserInfo', middlewareController, userController.userInfo); // get info account
     router.put('/api/webapi/change/userInfo',middlewareController, userController.changeUser); // get info account
     router.put('/api/webapi/change/pass',middlewareController, userController.changePassword); // get info account
+    router.post('/api/webapi/change/updateAvatar',middlewareController, userController.updateAvatar); // get info account
+    router.post('/api/webapi/confirmPassword',middlewareController, userController.confirmPassword); // get info account
+
 
     // bet wingo
     router.post('/api/webapi/action/join', middlewareController, winGoController.betWinGo); // register

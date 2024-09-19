@@ -159,6 +159,7 @@ const userInfo = async (req, res) => {
                 id_user: others.id_user,
                 last_login: user.last_login.toLocaleString(),
                 name_user: others.name_user,
+                avatar: others.avatar,
                 phone_user: others.phone,
                 money_user: user.money,
                 thirdparty_wallet: thirdPartyBalance, // Updated with third party balance
@@ -220,6 +221,55 @@ const changeUser = async(req, res) => {
 
 }
 
+const updateAvatar = async (req, res) => {
+    const authtoken = req.headers['authorization']?.split(' ')[1];    
+    const auth = md5(authtoken);
+    const { avatar } = req.body; // Assuming avatar is the image name (e.g., '1-a6662edb.png')
+    const timeNow = new Date().toISOString();
+
+    try {
+        // Step 1: Retrieve the user using the token
+        const [rows] = await connection.query('SELECT * FROM users WHERE `token` = ?', [auth]);
+        
+        // Step 2: Validate user and avatar
+        if (!rows || !avatar) {
+            return res.status(200).json({
+                message: 'Failed',
+                status: false,
+                timeStamp: timeNow,
+            });
+        }
+
+        const userId = rows[0].id; // Assuming `id` is the user's identifier in the database
+        
+        // Step 3: Update the avatar in the users table
+        const [result] = await connection.query('UPDATE users SET avatar = ? WHERE id = ?', [avatar, userId]);
+
+        // Step 4: Check if update was successful
+        if (result.affectedRows > 0) {
+            return res.status(200).json({
+                message: 'Avatar updated successfully',
+                status: true,
+                timeStamp: timeNow,
+            });
+        } else {
+            return res.status(400).json({
+                message: 'User not found',
+                status: false,
+                timeStamp: timeNow,
+            });
+        }
+    } catch (error) {
+        console.error('Error updating avatar:', error);
+        return res.status(500).json({
+            message: 'An error occurred while updating avatar',
+            status: false,
+            timeStamp: timeNow,
+        });
+    }
+};
+
+
 const changePassword = async(req, res) => {
     const authtoken = req.headers['authorization']?.split(' ')[1];    
     const auth =md5(authtoken);
@@ -266,6 +316,41 @@ const changePassword = async(req, res) => {
     });
 
 }
+
+const confirmPassword = async (req, res) => {
+    const authtoken = req.headers['authorization']?.split(' ')[1];
+    const auth = md5(authtoken);
+    let password = req.body.password;
+
+    if (!password) return res.status(200).json({
+        message: 'Password is required',
+        status: false,
+        timeStamp: timeNow,
+    });
+
+    // Query the database to find a user with the matching token and password
+    const [rows] = await connection.query(
+        'SELECT * FROM users WHERE `token` = ? AND `password` = ?',
+        [auth, md5(password)]
+    );
+
+    // If no matching rows, the password is incorrect
+    if (rows.length === 0) {
+        return res.status(200).json({
+            message: 'Incorrect password',
+            status: false,
+            timeStamp: timeNow,
+        });
+    }
+
+    // If the password matches, return success
+    return res.status(200).json({
+        message: 'Password confirmed',
+        status: true,
+        timeStamp: timeNow,
+    });
+};
+
 
 const checkInHandling = async(req, res) => {
     const authtoken = req.headers['authorization']?.split(' ')[1];    
@@ -3403,21 +3488,21 @@ const rebate = async (req, res) => {
 
         // Sum money in minutes_1 table
         const [minutesResult] = await connection.query(
-            'SELECT SUM(money) as total_minutes FROM minutes_1 WHERE phone = ? AND id > 52350',
+            'SELECT SUM(money) as total_minutes FROM minutes_1 WHERE phone = ? AND id > 0',
             [userPhone]
         );
         const totalMinutes = minutesResult[0].total_minutes || 0;
 
         // Sum money in result_k3 table
         const [resultK3Result] = await connection.query(
-            'SELECT SUM(money) as total_result_k3 FROM result_k3 WHERE phone = ? AND id > 573',
+            'SELECT SUM(money) as total_result_k3 FROM result_k3 WHERE phone = ? AND id > 0',
             [userPhone]
         );
         const totalResultK3 = resultK3Result[0].total_result_k3 || 0;
 
         // Sum money in result_5d table
         const [result5DResult] = await connection.query(
-            'SELECT SUM(money) as total_result_5d FROM result_5d WHERE phone = ? AND id > 10',
+            'SELECT SUM(money) as total_result_5d FROM result_5d WHERE phone = ? AND id > 0',
             [userPhone]
         );
         const totalResult5D = result5DResult[0].total_result_5d || 0;
@@ -5320,5 +5405,7 @@ module.exports = {
     wingo5,
     wingo10,
     moneyTransfer,
-    loginLogs
+    loginLogs,
+    updateAvatar,
+    confirmPassword
 }
