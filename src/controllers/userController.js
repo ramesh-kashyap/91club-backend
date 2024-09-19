@@ -4213,7 +4213,7 @@ const listStreakBonusReport = async (req, res) => {
     let userPhone = user[0].phone;
 
     const [streakBonuses] = await connection.query(
-        'SELECT `updated_at`, `amount`, `status` FROM streak_bonus WHERE `phone` = ? ORDER BY `updated_at` DESC', 
+        'SELECT * FROM streak_bonus WHERE `phone` = ? ORDER BY `updated_at` DESC', 
         [userPhone]
     );
 
