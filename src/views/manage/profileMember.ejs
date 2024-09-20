@@ -131,24 +131,38 @@
                                         <span>Account number</span>
                                     </strong>
 
-                                    <p class="text-muted" id="stk">No banks added yet</p>
+                                    <p class="text-muted" id="accountNo">No banks added yet</p>
                                     
                                     <hr>
 
                                     <strong>
                                         <i class="fas fa-map-marker-alt mr-1"></i>
-                                        <span>Address</span>
+                                        <span>Bank Name</span>
                                     </strong>
 
-                                    <p class="text-muted" id="location">No banks added yet</p>
+                                    <p class="text-muted" id="bankName">No banks added yet</p>
 
                                     <hr>
-                                    <strong>
-                                        <i class="fas fa-book mr-1"></i>
-                                        <span>Extra time</span>
-                                    </strong>
-                                    <p class="text-muted" id="timeAddBank">No banks added yet</p>
 
+                                    <strong>
+                                        <i class="fas fa-map-marker-alt mr-1"></i>
+                                        <span>Branch Name</span>
+                                    </strong>
+
+                                    <p class="text-muted" id="branchName">No banks added yet</p>
+
+                                    <hr>
+
+                                    <strong>
+                                        <i class="fas fa-map-marker-alt mr-1"></i>
+                                        <span>IFSC Code</span>
+                                    </strong>
+
+                                    <p class="text-muted" id="ifsc">No banks added yet</p>
+
+                                    <hr>
+
+                                    
                                     <a href="#" class="btn btn-primary btn-block">
                                         <b style="text-transform: uppercase;">EDIT</b>
                                     </a>
@@ -265,9 +279,11 @@
                 // bank
                 if (response.bank_user && response.bank_user[0]) {
                     $('#name').text(response.bank_user[0].name_user || 'N/A');
-                    $('#stk').text(response.bank_user[0].stk || 'N/A');
-                    $('#location').text((response.bank_user[0].tinh || 'N/A') + " - " + (response.bank_user[0].tp || 'N/A'));
-                    $('#timeAddBank').text(timerJoin(response.bank_user[0].time));
+                    $('#accountNo').text(response.bank_user[0].account_number || 'N/A');
+                    $('#bankName').text((response.bank_user[0].name_bank || 'N/A'));
+                    $('#branchName').text((response.bank_user[0].branch_name|| 'N/A'));
+                    $('#ifsc').text((response.bank_user[0].ifsc_code|| 'N/A'));
+
                 }
             }
         });
