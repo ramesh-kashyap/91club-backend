@@ -2380,6 +2380,8 @@ const addBank = async (req, res) => {
     let bankName = req.body.bankName;
     let accountName = req.body.accountName;
     let accountNumber = req.body.accountNumber;
+    let branchName = req.body.branchName;
+
     let ifscCode = req.body.ifscCode;
     let usdtBep20 = req.body.usdtBep20;
     let usdttrc20 = req.body.usdttrc20;
@@ -2419,7 +2421,8 @@ const addBank = async (req, res) => {
             name_user = ?,
             account_number = ?,
             ifsc_code =?,
-            time = ?`;
+            time = ?,
+             branch_name =?`;
 
             const params = [
                 userInfo.phone || null, 
@@ -2429,7 +2432,8 @@ const addBank = async (req, res) => {
                 accountName || null, 
                 accountNumber || null, 
                 ifscCode || null, 
-                time || null
+                time || null,
+                branchName || null,
             ];
             
             await connection.execute(sql, params);
@@ -2466,6 +2470,10 @@ const addBank = async (req, res) => {
             if (ifscCode && !existingUserBank[0].ifsc_code) {
                 updateFields.push('ifsc_code = ?');
                 updateValues.push(ifscCode);
+            }
+            if (branchName && !existingUserBank[0].branch_name) {
+                updateFields.push('branch_name = ?');
+                updateValues.push(branchName);
             }
 
             if (updateFields.length > 0) {
@@ -4337,6 +4345,10 @@ const getVipDetails = async (req, res) => {
             [userInfo.id]
         );
 
+        const [vipRules] = await connection.query(
+            'SELECT * FROM vip_rules WHERE id < 10'
+        );
+
         const numberOfRows = levelUpBonuses.length;
 
         return res.status(200).json({
@@ -4344,6 +4356,7 @@ const getVipDetails = async (req, res) => {
             status: true,
             experience: userInfo.experience,
             vip_level: userInfo.vip_level,
+            vipRules,
             levelUpBonuses: levelUpBonuses,
             numberOfRows: numberOfRows,
             timeStamp: new Date().toISOString(),
