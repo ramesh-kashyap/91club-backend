@@ -51,7 +51,8 @@
                 <tr>
                   <th class="text-center">#</th>
                   <th class="text-center">Account</th>
-                  <th class="text-center">Period Numbers</th>
+                  <th class="text-center">First Numbers</th>
+                  <th class="text-center">Last Numbers</th>
                   <th class="text-center">Bonus</th>
                   <th class="text-center">Streak Number</th>
                 
@@ -96,8 +97,11 @@
                   <td>
                     <b>${data.streak_period_number}</b>
                   </td>
+                   <td>
+                    <b>${data.last_period_number}</b>
+                  </td>
                   <td>
-                    <b>${(data.amount)}</b>
+                    <b>${(data.bonus)}%</b>
                   </td>
                   <td style="min-width: 190px;">
                     <b>${data.streak_number}</b>

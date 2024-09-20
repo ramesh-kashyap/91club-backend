@@ -128,27 +128,42 @@
     <script src="//cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
 
     <script>
-        function timerJoin(params = '') {
-            let date;
-            if (params) {
-                date = new Date(params);
-            } else {
-                date = new Date();
-            }
+      function timerJoin(params = '') {
+    let date;
     
-            // Convert UTC time to IST time
-            const offset = 5.5 * 60 * 60 * 1000; // IST offset in milliseconds
-            const istTime = new Date(date.getTime() + offset);
-    
-            const years = formateT(istTime.getFullYear());
-            const months = formateT(istTime.getMonth() + 1);
-            const days = formateT(istTime.getDate());
-            const hours = formateT(istTime.getHours());
-            const minutes = formateT(istTime.getMinutes());
-            const seconds = formateT(istTime.getSeconds());
-    
-            return `${years}/${months}/${days} - ${hours}:${minutes}:${seconds}`;
-        }
+    // Check if 'params' is provided and create a new Date object accordingly
+    if (params) {
+        date = new Date(params);
+    } else {
+        date = new Date(); // If no parameter is passed, use the current date and time
+    }
+
+    // Convert UTC time to IST time (Indian Standard Time)
+    const offset = 5.5 * 60 * 60 * 1000; // IST offset in milliseconds (5 hours 30 minutes)
+    const istTime = new Date(date.getTime() + offset);
+
+    // Helper function to add leading zero if needed (for months, days, hours, etc.)
+    function formatT(value) {
+        return value < 10 ? '0' + value : value;
+    }
+
+    // Extract the year, month, day, hours, minutes, and seconds from the IST time
+    const years = istTime.getFullYear();
+    const months = formatT(istTime.getMonth() + 1); // Months are zero-based in JS
+    const days = formatT(istTime.getDate());
+
+    // Convert 24-hour time to 12-hour time
+    let hours = istTime.getHours();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // If hour equals 0 (midnight), change it to 12
+
+    const minutes = formatT(istTime.getMinutes());
+    const seconds = formatT(istTime.getSeconds());
+
+    // Return the formatted date and time in 'YYYY/MM/DD - HH:MM:SS AM/PM' format
+    return `${years}/${months}/${days} - ${hours}:${minutes}:${seconds} ${ampm}`;
+}
     
         function formateT(value) {
             return value.toString().padStart(2, '0');
