@@ -2323,6 +2323,8 @@ const addBank = async (req, res) => {
                 ifscCode || null, 
                 time || null
             ];
+
+            console.log(params);
             
             await connection.execute(sql, params);
             return res.status(200).json({
